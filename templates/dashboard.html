@@ -33,9 +33,27 @@
                 {{ email["status"] }}
             </p>
 
-            <button type="button">Mark Done</button>
-            <button type="button">Waiting</button>
-            <button type="button">Ignore</button>
+            <form
+                action="{{ url_for('mark_done', email_id=email['id']) }}"
+                method="POST"
+                style="display: inline;"
+            >
+                <button type="submit">Mark Done</button>
+            </form>
+            <form
+                action="{{ url_for('mark_waiting', email_id=email['id']) }}"
+                method="POST"
+                style="display: inline;"
+            >
+                <button type="submit">Waiting</button>
+            </form>
+            <form
+                action="{{ url_for('mark_ignore', email_id=email['id']) }}"
+                method="POST"
+                style="display: inline;"
+            >
+                <button type="submit">Ignore</button>
+            </form>
 
             <hr>
         </div>

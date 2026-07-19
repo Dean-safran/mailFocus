@@ -9,9 +9,9 @@ Purpose: Learn how python produces webpages before introducing Gmail or database
 - pass list from Flask to Jinja ✅
 - display every email ✅
 - sort emails by priority ✅
-- give each fake email a unique ID
+- give each fake email a unique ID ✅
 - display status for each email ✅
-- add simple buttons 
+- add simple buttons ✅
 
 
 ## Phase 2 : Make fake dashboard interactive
