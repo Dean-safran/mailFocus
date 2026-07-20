@@ -14,7 +14,7 @@ Purpose: Learn how python produces webpages before introducing Gmail or database
 - add simple buttons ✅
 
 
-## Phase 2 : Make fake dashboard interactive
+## Phase 2 : Make fake dashboard interactive ✅
 - add **mark done** form
     - changes an email from `needs reply` to `done`
 - create flask route that receives the email ID
