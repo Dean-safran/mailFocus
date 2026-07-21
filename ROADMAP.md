@@ -42,33 +42,33 @@ it stays done
     - gmail_thread_id
     - received_at
 - create SQLite database file  ✅
-- insert fake emails into database
-- load emails from SQLite instead of python list
-- update database rows when buttons are clicked
-- prevent the same email from being inserted twice
+- insert fake emails into database ✅
+- load emails from SQLite instead of python list ✅
+- update database rows when buttons are clicked ✅
+- prevent the same email from being inserted twice ✅
 
 
 ## Phase 4 : Build the priority system using fake emails
 Instead of manually inputting priority scores, 
 we automate with python script
 
- - create `services/classifier.py`
- - add a function: classify_email(email)
- - increase priority for:
-    - Questions
-    - Direct requests
-    - Deadlines
-    - unread emails
- - decrease priority for
-    - `no reply` senders
-    - newsletters
-    - promotions
-    - receipts
-    - automated notifications
- - return 
-    - priority score
-    - suggested status
-    - explanation
+ - create `services/classifier.py` ✅
+ - add a function: classify_email(email) ✅
+    - increase priority for: 
+        - Questions
+        - Direct requests
+        - Deadlines
+        - unread emails
+    - decrease priority for
+        - `no reply` senders
+        - newsletters
+        - promotions
+        - receipts
+        - automated notifications
+    - return 
+        - priority score
+        - suggested status
+        - explanation
  - test classifier with several fake emails
  - display automatic score, status and reason on dashboard
 
