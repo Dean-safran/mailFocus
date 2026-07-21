@@ -16,39 +16,49 @@
 
     {% for email in emails%}
         <div>
-            <h2>{{ email["subject"] }}</h2>
+            <h2>{{ email.subject }}</h2>
 
             <p>
                 <strong>From:</strong>
-                {{ email["sender"] }}
+                {{ email.sender }}
+            </p>
+
+            <p>
+                <strong>Snippet:</strong>
+                {{ email.snippet }}
             </p>
 
             <p>
                 <strong>Priority</strong>
-                {{ email["priority"] }}
+                {{ email.priority }}
             </p>
             
             <p>
                 <strong>Status:</strong>
-                {{ email["status"] }}
+                {{ email.status }}
+            </p>
+
+            <p>
+                <strong>Reason:</strong>
+                {{ email.reason }}
             </p>
 
             <form
-                action="{{ url_for('mark_done', email_id=email['id']) }}"
+                action="{{ url_for('mark_done', email_id=email.id) }}"
                 method="POST"
                 style="display: inline;"
             >
                 <button type="submit">Mark Done</button>
             </form>
             <form
-                action="{{ url_for('mark_waiting', email_id=email['id']) }}"
+                action="{{ url_for('mark_waiting', email_id=email.id) }}"
                 method="POST"
                 style="display: inline;"
             >
                 <button type="submit">Waiting</button>
             </form>
             <form
-                action="{{ url_for('mark_ignore', email_id=email['id']) }}"
+                action="{{ url_for('mark_ignore', email_id=email.id) }}"
                 method="POST"
                 style="display: inline;"
             >

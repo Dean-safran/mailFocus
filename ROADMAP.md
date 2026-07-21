@@ -29,9 +29,9 @@ Purpose: Learn how python produces webpages before introducing Gmail or database
 When a user marks a message done, if we restart,
 it stays done
 
-- install Flask-SQLAlchemy
-- create an `Email` model
-- add columns such as 
+- install Flask-SQLAlchemy  ✅
+- create an `Email` model  ✅
+- add columns such as  ✅
     - id
     - sender
     - subject
@@ -41,7 +41,7 @@ it stays done
     - reason
     - gmail_thread_id
     - received_at
-- create SQLite database file
+- create SQLite database file  ✅
 - insert fake emails into database
 - load emails from SQLite instead of python list
 - update database rows when buttons are clicked
