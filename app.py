@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from services.classifier import classify_email
 
 # configurations
 # --------------
@@ -29,6 +30,12 @@ class Email(db.Model) :
         db.Text,
         nullable=False,
         default=""
+    )
+
+    is_unread = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False
     )
 
     priority = db.Column(
@@ -63,43 +70,51 @@ class Email(db.Model) :
 emails = [
     {
         "sender": "Professor Smith",
-        "subject": "Please send your project",
-        "snippet": "Could you please send me your project before Friday?",
-        "priority": 90,
-        "status": "Needs Reply",
-        "reason": "Contains a direct request and a deadline.",
+        "subject": "Project results",
+        "snippet": "Could you send me your results before Friday?",
+        "is_unread": True,
         "gmail_thread_id": "fake-thread-1",
-        "received_at": datetime(2026, 7, 15, 9, 30)
-    },
-    {
-        "sender": "GitHub",
-        "subject": "New login detected",
-        "snippet": "We noticed a new login to your GitHub account.",
-        "priority": 60,
-        "status": "Review",
-        "reason": "Security notification that should be reviewed.",
-        "gmail_thread_id": "fake-thread-2",
-        "received_at": datetime(2026, 7, 14, 14, 15),
-    },
-    {
-        "sender": "Clothing Store",
-        "subject": "20% off today",
-        "snippet": "Shop today and receive 20% off your order.",
-        "priority": 10,
-        "status": "No Action",
-        "reason": "Promotional email with no required action.",
-        "gmail_thread_id": "fake-thread-3",
-        "received_at": datetime(2026, 7, 13, 11, 0),
+        "received_at": datetime(2026, 7, 15, 9, 30),
     },
     {
         "sender": "Career Center",
         "subject": "Internship application deadline",
         "snippet": "Please submit your application by Monday.",
-        "priority": 80,
-        "status": "Needs Reply",
-        "reason": "Contains a request with an upcoming deadline.",
-        "gmail_thread_id": "fake-thread-4",
+        "is_unread": True,
+        "gmail_thread_id": "fake-thread-2",
         "received_at": datetime(2026, 7, 16, 8, 45),
+    },
+    {
+        "sender": "teammate@example.com",
+        "subject": "Project update",
+        "snippet": "Can you review this when you have time?",
+        "is_unread": False,
+        "gmail_thread_id": "fake-thread-3",
+        "received_at": datetime(2026, 7, 16, 10, 15),
+    },
+    {
+        "sender": "newsletter@example.com",
+        "subject": "Weekly newsletter",
+        "snippet": "Read this week's news. Unsubscribe here.",
+        "is_unread": True,
+        "gmail_thread_id": "fake-thread-4",
+        "received_at": datetime(2026, 7, 14, 12, 0),
+    },
+    {
+        "sender": "noreply@store.com",
+        "subject": "20% off today",
+        "snippet": "Limited-time sale. Shop now.",
+        "is_unread": False,
+        "gmail_thread_id": "fake-thread-5",
+        "received_at": datetime(2026, 7, 13, 11, 0),
+    },
+    {
+        "sender": "orders@store.com",
+        "subject": "Order confirmation",
+        "snippet": "Your order has been received.",
+        "is_unread": True,
+        "gmail_thread_id": "fake-thread-6",
+        "received_at": datetime(2026, 7, 12, 16, 30),
     }
 ]
 
@@ -116,7 +131,13 @@ def seed_fake_emails():
         ).scalar_one_or_none()
 
         if existing_email is None:
-            # ** sets the values of the dict
+            # run classifier and add 
+            # attributes to email object
+            classification = classify_email(fake_email)
+            fake_email["priority"] = classification["priority"]
+            fake_email["status"] = classification["status"]
+            fake_email["reason"] = classification["reasons"]
+            # ** sets the values of the fake_email dict
             # to be values of the args of Email()
             email = Email(**fake_email)
             # queue the email to be 

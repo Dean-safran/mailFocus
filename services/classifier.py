@@ -28,7 +28,7 @@ def classify_email(email) :
 
     if any(phrase in text for phrase in request_phrases) :
         score += 25
-        reasons += "Contains a direct request"
+        reasons.append("Contains a direct request")
 
     # Increase priority for deadlines
     deadline_phrases = [
@@ -55,7 +55,7 @@ def classify_email(email) :
 
     if any(phrase in text for phrase in deadline_phrases) :
         score += 25
-        reasons += "Contains possible deadline"
+        reasons.append("Contains possible deadline")
 
     # Increase priority for unread emails
     if email.get("is_unread", False) :
