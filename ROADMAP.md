@@ -69,8 +69,8 @@ we automate with python script
         - priority score
         - suggested status
         - explanation
- - test classifier with several fake emails
- - display automatic score, status and reason on dashboard
+ - test classifier with several fake emails ✅
+ - display automatic score, status and reason on dashboard ✅
 
 
 ## Phase 5 : Create google login and Gmail access

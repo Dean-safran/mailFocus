@@ -2,3 +2,5 @@
 __pycache__/
 .env
 instance/
+credentials.json
+token.json

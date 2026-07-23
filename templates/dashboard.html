@@ -14,6 +14,18 @@
 
     <p>Your emails, sorted by priority.</p>
 
+    {% if gmail_connected %}
+        <p>Gmail connected.</p>
+        
+        <form action="{{ url_for('gmail_preview') }}" method="GET">
+            <button type="submit">View Recent Gmails</button>
+        </form>
+    {% else %}
+        <form action="{{ url_for('connect_gmail') }}" method="GET">
+            <button type="submit">Connect Gmail</button>
+        </form>
+    {% endif %}
+
     {% for email in emails%}
         <div>
             <h2>{{ email.subject }}</h2>

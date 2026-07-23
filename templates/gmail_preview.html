@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+
+    <title>Gmail Preview</title>
+</head>
+
+<body>
+    <h1>Recent Gmail Messages</h1>
+
+    <p>
+        <a href="{{ url_for('dashboard') }}">
+            Back to MailFocus
+        </a>
+    </p>
+
+    {% if gmail_messages %}
+        {% for email in gmail_messages %}
+            <div>
+                <h2>{{ email.subject }}</h2>
+
+                <p>
+                    <strong>From:</strong>
+                    {{ email.sender }}
+                </p>
+
+                <p>
+                    <strong>Date:</strong>
+                    {{ email.date }}
+                </p>
+
+                <p>
+                    <strong>Read status:</strong>
+
+                    {% if email.is_unread %}
+                        Unread
+                    {% else %}
+                        Read
+                    {% endif %}
+                </p>
+
+                <p>
+                    <strong>Snippet:</strong>
+                    {{ email.snippet }}
+                </p>
+
+                <hr>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No inbox messages were found.</p>
+    {% endif %}
+</body>
+</html>
