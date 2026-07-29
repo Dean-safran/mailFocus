@@ -17,6 +17,12 @@ from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
+import base64
+
+from services.gmail_parser import (
+    get_message_header,
+    normalize_gmail_message,
+)
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
@@ -192,12 +198,19 @@ def get_gmail_service() :
 
     return service
 
-def get_message_header(headers, header_name, default_value=""):
-    for header in headers:
-        if header.get("name", "").lower() == header_name.lower():
-            return header.get("value", default_value)
+def decode_body_data(encoded_data):
+    if not encoded_data:
+        return ""
 
-    return default_value
+    padding = "=" * (-len(encoded_data) % 4)
+    padded_data = encoded_data + padding
+
+    decoded_bytes = base64.urlsafe_b64decode(padded_data)
+
+    return decoded_bytes.decode(
+        "utf-8",
+        errors="replace",
+    )
 
 # create db table
 with app.app_context() :
@@ -355,12 +368,7 @@ def gmail_preview():
             .get(
                 userId="me",
                 id=message_reference["id"],
-                format="metadata",
-                metadataHeaders=[
-                    "Subject",
-                    "From",
-                    "Date",
-                ],
+                format="full",
             )
             .execute()
         )

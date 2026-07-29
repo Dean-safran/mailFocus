@@ -73,7 +73,7 @@ we automate with python script
  - display automatic score, status and reason on dashboard ✅
 
 
-## Phase 5 : Create google login and Gmail access
+## Phase 5 : Create google login and Gmail access ✅
 We start to connect with google to replace 
 fake messages with real messages
 
@@ -98,7 +98,7 @@ fake messages with real messages
 Google's API response will not be a neat dictionary 
 like our fake emails, we need to transform them
 
-- Extract:
+- Extract:  ✅
     - Sender
     - Recipients
     - Subject
@@ -107,10 +107,10 @@ like our fake emails, we need to transform them
     - Body
     - Message ID
     - Thread ID
-- Decode encoded email bodies.
-- Handle plain-text and HTML emails.
-- Handle missing fields safely.
-- Ignore attachments for now.
+- Decode encoded email bodies.  ✅
+- Handle plain-text and HTML emails.  ✅
+- Handle missing fields safely.  ✅
+- Ignore attachments for now.  ✅
 - Create an Open in Gmail link.
 - Save the cleaned email data in SQLite.
 - Prevent duplicate imports.
