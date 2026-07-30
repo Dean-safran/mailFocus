@@ -2,6 +2,7 @@ import base64
 from datetime import datetime, timezone
 from email.utils import getaddresses, parsedate_to_datetime
 from html.parser import HTMLParser
+from html import unescape
 
 
 class HTMLTextExtractor(HTMLParser):
@@ -198,7 +199,7 @@ def normalize_gmail_message(message):
             message,
             headers,
         ),
-        "snippet": message.get("snippet", ""),
+        "snippet": unescape(message.get("snippet", "")),
         "body": extract_message_body(payload),
         "is_unread": "UNREAD" in message.get(
             "labelIds",

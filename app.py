@@ -52,9 +52,26 @@ db.init_app(app)
 class Email(db.Model) :
     id = db.Column(db.Integer, primary_key=True)
 
+    gmail_message_id = db.Column(
+        db.String(255),
+        unique=True,
+        nullable=False,
+    )
+
+    gmail_thread_id = db.Column(
+        db.String(255),
+        nullable=False,
+    )
+
     sender = db.Column(
         db.String(255),
         nullable=False
+    )
+
+    recipients = db.Column(
+        db.Text,
+        nullable=False,
+        default="",
     )
 
     subject = db.Column(
@@ -66,6 +83,18 @@ class Email(db.Model) :
         db.Text,
         nullable=False,
         default=""
+    )
+
+    body = db.Column(
+        db.Text,
+        nullable=False,
+        default="",
+    )
+
+    is_unread = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False,
     )
 
     is_unread = db.Column(
@@ -92,94 +121,21 @@ class Email(db.Model) :
         default=""
     )
     
-    gmail_thread_id = db.Column(
-        db.String(255),
-        unique=True,
-        nullable=True
-    )
-    
     received_at = db.Column(
         db.DateTime,
         nullable=True
     )
 
-emails = [
-    {
-        "sender": "Professor Smith",
-        "subject": "Project results",
-        "snippet": "Could you send me your results before Friday?",
-        "is_unread": True,
-        "gmail_thread_id": "fake-thread-1",
-        "received_at": datetime(2026, 7, 15, 9, 30),
-    },
-    {
-        "sender": "Career Center",
-        "subject": "Internship application deadline",
-        "snippet": "Please submit your application by Monday.",
-        "is_unread": True,
-        "gmail_thread_id": "fake-thread-2",
-        "received_at": datetime(2026, 7, 16, 8, 45),
-    },
-    {
-        "sender": "teammate@example.com",
-        "subject": "Project update",
-        "snippet": "Can you review this when you have time?",
-        "is_unread": False,
-        "gmail_thread_id": "fake-thread-3",
-        "received_at": datetime(2026, 7, 16, 10, 15),
-    },
-    {
-        "sender": "newsletter@example.com",
-        "subject": "Weekly newsletter",
-        "snippet": "Read this week's news. Unsubscribe here.",
-        "is_unread": True,
-        "gmail_thread_id": "fake-thread-4",
-        "received_at": datetime(2026, 7, 14, 12, 0),
-    },
-    {
-        "sender": "noreply@store.com",
-        "subject": "20% off today",
-        "snippet": "Limited-time sale. Shop now.",
-        "is_unread": False,
-        "gmail_thread_id": "fake-thread-5",
-        "received_at": datetime(2026, 7, 13, 11, 0),
-    },
-    {
-        "sender": "orders@store.com",
-        "subject": "Order confirmation",
-        "snippet": "Your order has been received.",
-        "is_unread": True,
-        "gmail_thread_id": "fake-thread-6",
-        "received_at": datetime(2026, 7, 12, 16, 30),
-    }
-]
+    # lets us call email.gmail_url rather than email.gmail_url()
+    @property
+    def gmail_url(self):
+        return (
+            "https://mail.google.com/mail/"
+            f"#all/{self.gmail_thread_id}"
+        )
 
-def seed_fake_emails(): 
-    for fake_email in emails:
-        # db.session.execute() executes
-        # a query
-        existing_email = db.session.execute(
-            db.select(Email).filter_by(
-                gmail_thread_id=fake_email["gmail_thread_id"]
-            )
-        # returns an Email object if it 
-        # exists, else returns None
-        ).scalar_one_or_none()
 
-        if existing_email is None:
-            # run classifier and add 
-            # attributes to email object
-            classification = classify_email(fake_email)
-            fake_email["priority"] = classification["priority"]
-            fake_email["status"] = classification["status"]
-            fake_email["reason"] = classification["reasons"]
-            # ** sets the values of the fake_email dict
-            # to be values of the args of Email()
-            email = Email(**fake_email)
-            # queue the email to be 
-            # inserted
-            db.session.add(email)
-    db.session.commit()
+
 
 # create service to access gmail API
 def get_gmail_service() :
@@ -216,8 +172,6 @@ def decode_body_data(encoded_data):
 with app.app_context() :
     # create missing tables
     db.create_all()
-    # inserts any missing emails
-    seed_fake_emails()
 
 
 
@@ -339,8 +293,8 @@ def oauth_callback():
 
     return redirect(url_for("dashboard"))
 
-@app.route("/gmail-preview")
-def gmail_preview():
+@app.route("/sync-gmail", methods=["POST"])
+def sync_gmail():
     if not os.path.exists("token.json"):
         return redirect(url_for("connect_gmail"))
 
@@ -351,7 +305,7 @@ def gmail_preview():
         .messages()
         .list(
             userId="me",
-            maxResults=10,
+            maxResults=100,
             q="in:inbox",
         )
         .execute()
@@ -359,50 +313,74 @@ def gmail_preview():
 
     message_references = response.get("messages", [])
 
-    gmail_messages = []
+    imported_count = 0
+    skipped_count = 0
 
     for message_reference in message_references:
-        message = (
+        gmail_message_id = message_reference["id"]
+
+        existing_email = db.session.execute(
+            db.select(Email).filter_by(
+                gmail_message_id=gmail_message_id,
+            )
+        ).scalar_one_or_none()
+
+        if existing_email is not None:
+            skipped_count += 1
+            continue
+
+        gmail_message = (
             service.users()
             .messages()
             .get(
                 userId="me",
-                id=message_reference["id"],
+                id=gmail_message_id,
                 format="full",
             )
             .execute()
         )
 
-        headers = message.get("payload", {}).get("headers", [])
+        normalized_email = normalize_gmail_message(
+            gmail_message
+        )
 
-        gmail_message = {
-            "id": message["id"],
-            "thread_id": message.get("threadId", ""),
-            "subject": get_message_header(
-                headers,
-                "Subject",
-                "(No subject)",
-            ),
-            "sender": get_message_header(
-                headers,
-                "From",
-                "(Unknown sender)",
-            ),
-            "date": get_message_header(
-                headers,
-                "Date",
-                "(Unknown date)",
-            ),
-            "snippet": message.get("snippet", ""),
-            "is_unread": "UNREAD" in message.get("labelIds", []),
-        }
+        classification = classify_email(
+            normalized_email
+        )
 
-        gmail_messages.append(gmail_message)
+        email = Email(
+            gmail_message_id=normalized_email[
+                "gmail_message_id"
+            ],
+            gmail_thread_id=normalized_email[
+                "gmail_thread_id"
+            ],
+            sender=normalized_email["sender"],
+            recipients=", ".join(
+                normalized_email["recipients"]
+            ),
+            subject=normalized_email["subject"],
+            snippet=normalized_email["snippet"],
+            body=normalized_email["body"],
+            is_unread=normalized_email["is_unread"],
+            received_at=normalized_email["received_at"],
+            priority=classification["priority"],
+            status=classification["status"],
+            reason=classification["reasons"],
+        )
 
-    return render_template(
-        "gmail_preview.html",
-        gmail_messages=gmail_messages,
+        db.session.add(email)
+        imported_count += 1
+
+    db.session.commit()
+
+    print(
+        f"Gmail sync complete: "
+        f"{imported_count} imported, "
+        f"{skipped_count} skipped."
     )
+
+    return redirect(url_for("dashboard"))
 
 # =======================================================
 

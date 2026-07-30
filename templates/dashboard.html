@@ -17,8 +17,8 @@
     {% if gmail_connected %}
         <p>Gmail connected.</p>
         
-        <form action="{{ url_for('gmail_preview') }}" method="GET">
-            <button type="submit">View Recent Gmails</button>
+        <form action="{{ url_for('sync_gmail') }}" method="POST">
+            <button type="submit">Sync Gmail Messages</button>
         </form>
     {% else %}
         <form action="{{ url_for('connect_gmail') }}" method="GET">
@@ -53,6 +53,16 @@
             <p>
                 <strong>Reason:</strong>
                 {{ email.reason }}
+            </p>
+            
+            <p>
+                <a
+                    href="{{ email.gmail_url }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Open in Gmail
+                </a>
             </p>
 
             <form
