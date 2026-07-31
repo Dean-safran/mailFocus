@@ -111,9 +111,9 @@ like our fake emails, we need to transform them
 - Handle plain-text and HTML emails.  ✅
 - Handle missing fields safely.  ✅
 - Ignore attachments for now.  ✅
-- Create an Open in Gmail link.
-- Save the cleaned email data in SQLite.
-- Prevent duplicate imports.
+- Create an Open in Gmail link. ✅
+- Save the cleaned email data in SQLite. ✅
+- Prevent duplicate imports. ✅
 
 
 ## Phase 7 : Analyze conversations instead of isolated messages

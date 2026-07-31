@@ -16,19 +16,29 @@ import os
 from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 import base64
 
 from services.gmail_parser import (
     get_message_header,
     normalize_gmail_message,
+    normalize_gmail_thread,
 )
+from services.thread_analyzer import analyze_thread
 
+
+
+
+# Global variables
+# ----------------
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
 ]
 
 REDIRECT_URI = "http://127.0.0.1:5000/oauth/callback"
+
+
 
 
 # configurations
@@ -48,18 +58,19 @@ db.init_app(app)
 
 
 
+
 # create email table model
 class Email(db.Model) :
     id = db.Column(db.Integer, primary_key=True)
 
     gmail_message_id = db.Column(
         db.String(255),
-        unique=True,
         nullable=False,
     )
 
     gmail_thread_id = db.Column(
         db.String(255),
+        unique=True,
         nullable=False,
     )
 
@@ -137,6 +148,9 @@ class Email(db.Model) :
 
 
 
+# Functions
+# ---------
+
 # create service to access gmail API
 def get_gmail_service() :
     # loads access and refresh tokens
@@ -154,26 +168,71 @@ def get_gmail_service() :
 
     return service
 
-def decode_body_data(encoded_data):
-    if not encoded_data:
-        return ""
 
-    padding = "=" * (-len(encoded_data) % 4)
-    padded_data = encoded_data + padding
-
-    decoded_bytes = base64.urlsafe_b64decode(padded_data)
-
-    return decoded_bytes.decode(
-        "utf-8",
-        errors="replace",
+def get_current_user_email(service):
+    profile = (
+        service.users()
+        .getProfile(userId="me")
+        .execute()
     )
 
+    return profile["emailAddress"].lower()
+
+
+def remove_threads_no_longer_in_inbox(service):
+    saved_threads = db.session.execute(
+        db.select(Email)
+    ).scalars().all()
+
+    removed_count = 0
+
+    for saved_thread in saved_threads:
+        try:
+            gmail_thread = (
+                service.users()
+                .threads()
+                .get(
+                    userId="me",
+                    id=saved_thread.gmail_thread_id,
+                    format="minimal",
+                )
+                .execute()
+            )
+
+        except HttpError as error:
+            if error.resp.status == 404:
+                db.session.delete(saved_thread)
+                removed_count += 1
+                continue
+
+            raise
+
+        messages = gmail_thread.get("messages", [])
+
+        thread_is_in_inbox = any(
+            "INBOX" in message.get("labelIds", [])
+            for message in messages
+        )
+
+        if not thread_is_in_inbox:
+            db.session.delete(saved_thread)
+            removed_count += 1
+
+    return removed_count
+
+
+
 # create db table
+# ----------------
 with app.app_context() :
     # create missing tables
     db.create_all()
 
 
+
+
+# Routes
+# -------
 
 # homepage route
 @app.route("/")
@@ -189,6 +248,7 @@ def dashboard() :
                            emails=emails,
                            gmail_connected=gmail_connected)
 
+
 # mark done route
 @app.route("/emails/<int:email_id>/done", methods=["POST"])
 def mark_done(email_id) :
@@ -201,6 +261,7 @@ def mark_done(email_id) :
 
     return redirect(url_for("dashboard"))
 
+
 # mark waiting route
 @app.route("/emails/<int:email_id>/waiting", methods=["POST"])
 def mark_waiting(email_id) :
@@ -210,6 +271,7 @@ def mark_waiting(email_id) :
     db.session.commit()
 
     return redirect(url_for("dashboard"))
+
 
 # mark ignore route
 @app.route("/emails/<int:email_id>/ignore", methods=["POST"])
@@ -222,7 +284,7 @@ def mark_ignore(email_id) :
     return redirect(url_for("dashboard"))
 
 
-# CONNECTING GMAIL CODE 
+# CONNECTING GMAIL ROUTES 
 # =======================================================
 # connect gmail route
 @app.route("/connect-gmail")
@@ -249,6 +311,7 @@ def connect_gmail() :
 
     # sends browser to google
     return redirect(authorization_url)
+
 
 @app.route("/oauth/callback")
 def oauth_callback():
@@ -293,94 +356,231 @@ def oauth_callback():
 
     return redirect(url_for("dashboard"))
 
+
 @app.route("/sync-gmail", methods=["POST"])
 def sync_gmail():
     if not os.path.exists("token.json"):
         return redirect(url_for("connect_gmail"))
 
     service = get_gmail_service()
+    user_email = get_current_user_email(service)
+
+    removed_count = remove_threads_no_longer_in_inbox(service)
 
     response = (
         service.users()
-        .messages()
+        .threads()
         .list(
             userId="me",
-            maxResults=100,
-            q="in:inbox",
+            labelIds=["INBOX"],
+            maxResults=30,
         )
         .execute()
     )
 
-    message_references = response.get("messages", [])
+    thread_references = response.get("threads", [])
 
     imported_count = 0
-    skipped_count = 0
+    updated_count = 0
+    unchanged_count = 0
 
-    for message_reference in message_references:
-        gmail_message_id = message_reference["id"]
+    for thread_reference in thread_references:
+        gmail_thread_id = thread_reference["id"]
 
-        existing_email = db.session.execute(
-            db.select(Email).filter_by(
-                gmail_message_id=gmail_message_id,
-            )
-        ).scalar_one_or_none()
-
-        if existing_email is not None:
-            skipped_count += 1
-            continue
-
-        gmail_message = (
+        # fetch every message in one thread
+        gmail_thread = (
             service.users()
-            .messages()
+            .threads()
             .get(
                 userId="me",
-                id=gmail_message_id,
+                id=gmail_thread_id,
                 format="full",
             )
             .execute()
         )
 
-        normalized_email = normalize_gmail_message(
-            gmail_message
+        # normalize thread object into a dictionary
+        # and sort
+        normalized_thread = normalize_gmail_thread(
+            gmail_thread
+        )
+        messages = normalized_thread["messages"]
+
+        if not messages:
+            continue
+
+        # analyze who owes next action
+        analysis = analyze_thread(
+            normalized_thread,
+            user_email,
         )
 
-        classification = classify_email(
-            normalized_email
+        newest_message = analysis["newest_message"]
+
+        # check if thread already exists in database
+        existing_thread = db.session.execute(
+            db.select(Email).filter_by(
+                gmail_thread_id=gmail_thread_id,
+            )
+        ).scalar_one_or_none()
+
+        # if thread object is not in database
+        if existing_thread is None:
+            email = Email(
+                gmail_message_id=newest_message[
+                    "gmail_message_id"
+                ],
+                gmail_thread_id=gmail_thread_id,
+                sender=newest_message["sender"],
+                recipients=", ".join(
+                    newest_message["recipients"]
+                ),
+                subject=newest_message["subject"],
+                snippet=newest_message["snippet"],
+                body=newest_message["body"],
+                is_unread=newest_message["is_unread"],
+                received_at=newest_message["received_at"],
+                priority=analysis["priority"],
+                status=analysis["status"],
+                reason=analysis["reasons"],
+            )
+
+            db.session.add(email)
+            imported_count += 1
+            continue
+
+        # check if thread needs to be updated
+        thread_has_new_message = (
+            existing_thread.gmail_message_id
+            != newest_message["gmail_message_id"]
         )
 
-        email = Email(
-            gmail_message_id=normalized_email[
-                "gmail_message_id"
-            ],
-            gmail_thread_id=normalized_email[
-                "gmail_thread_id"
-            ],
-            sender=normalized_email["sender"],
-            recipients=", ".join(
-                normalized_email["recipients"]
-            ),
-            subject=normalized_email["subject"],
-            snippet=normalized_email["snippet"],
-            body=normalized_email["body"],
-            is_unread=normalized_email["is_unread"],
-            received_at=normalized_email["received_at"],
-            priority=classification["priority"],
-            status=classification["status"],
-            reason=classification["reasons"],
-        )
+        # if thread doesn't need to be updated
+        if not thread_has_new_message:
+            unchanged_count += 1
+            continue
 
-        db.session.add(email)
-        imported_count += 1
+        # update thread with most recent message
+        existing_thread.gmail_message_id = (
+            newest_message["gmail_message_id"]
+        )
+        existing_thread.sender = newest_message["sender"]
+        existing_thread.recipients = ", ".join(
+            newest_message["recipients"]
+        )
+        existing_thread.subject = newest_message["subject"]
+        existing_thread.snippet = newest_message["snippet"]
+        existing_thread.body = newest_message["body"]
+        existing_thread.is_unread = newest_message["is_unread"]
+        existing_thread.received_at = newest_message[
+            "received_at"
+        ]
+        existing_thread.priority = analysis["priority"]
+        existing_thread.status = analysis["status"]
+        existing_thread.reason = analysis["reasons"]
+
+        updated_count += 1
 
     db.session.commit()
 
     print(
-        f"Gmail sync complete: "
-        f"{imported_count} imported, "
-        f"{skipped_count} skipped."
+        "Gmail sync complete: "
+        f"{imported_count} threads imported, "
+        f"{updated_count} threads updated, "
+        f"{unchanged_count} threads unchanged, "
+        f"{removed_count} threads removed."
     )
 
     return redirect(url_for("dashboard"))
+
+
+@app.route("/test-thread")
+def test_thread():
+    if not os.path.exists("token.json"):
+        return redirect(url_for("connect_gmail"))
+
+    service = get_gmail_service()
+    user_email = get_current_user_email(service)
+
+    response = (
+        service.users()
+        .threads()
+        .list(
+            userId="me",
+            labelIds=["INBOX"],
+            maxResults=30,
+        )
+        .execute()
+    )
+
+    thread_references = response.get("threads", [])
+    selected_thread = None
+
+    for thread_reference in thread_references:
+        gmail_thread = (
+            service.users()
+            .threads()
+            .get(
+                userId="me",
+                id=thread_reference["id"],
+                format="full",
+            )
+            .execute()
+        )
+
+        messages = gmail_thread.get("messages", [])
+
+        if len(messages) >= 2:
+            selected_thread = gmail_thread
+            break
+
+    if selected_thread is None:
+        return (
+            "No recent inbox thread with multiple "
+            "messages was found."
+        )
+
+    normalized_thread = normalize_gmail_thread(
+        selected_thread
+    )
+
+    analysis = analyze_thread(
+        normalized_thread,
+        user_email,
+    )
+
+    messages = normalized_thread["messages"]
+    newest_message = analysis["newest_message"]
+
+    print("\n--- THREAD ACTION ANALYSIS ---")
+    print("Number of messages:", len(messages))
+
+    for index, message in enumerate(
+        messages,
+        start=1,
+    ):
+        print(f"\nMessage {index}")
+        print("Sender:", message["sender"])
+        print("Received at:", message["received_at"])
+        print("Body preview:", message["body"][:150])
+
+    print("\nNewest message:")
+    print("Sender:", newest_message["sender"])
+    print(
+        "Sent by current user:",
+        analysis["newest_sent_by_user"],
+    )
+
+    print("\nThread result:")
+    print("Status:", analysis["status"])
+    print("Priority:", analysis["priority"])
+    print("Reason:", analysis["reasons"])
+    print("--------------------------------\n")
+
+    return (
+        f"Thread analyzed as {analysis['status']}. "
+        f"Check the Flask terminal."
+    )
 
 # =======================================================
 

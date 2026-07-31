@@ -206,3 +206,23 @@ def normalize_gmail_message(message):
             [],
         ),
     }
+
+def normalize_gmail_thread(thread):
+    """Normalize and chronologically sort every message in a thread."""
+
+    normalized_messages = []
+
+    for message in thread.get("messages", []):
+        normalized_message = normalize_gmail_message(message)
+        normalized_messages.append(normalized_message)
+
+    normalized_messages.sort(
+        key=lambda message: (
+            message["received_at"] or datetime.min
+        )
+    )
+
+    return {
+        "gmail_thread_id": thread.get("id", ""),
+        "messages": normalized_messages,
+}

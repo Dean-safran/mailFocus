@@ -2,11 +2,12 @@ def classify_email(email) :
     score = 20
     reasons = []
 
-    sender = email["sender"].lower()
-    subject = email["subject"].lower()
-    snippet = email["snippet"].lower()
+    sender = email.get("sender", "").lower()
+    subject = email.get("subject", "").lower()
+    snippet = email.get("snippet", "").lower()
+    body = email.get("body", "").lower()
 
-    text = f"{sender} {subject} {snippet}"
+    text = f"{subject} {snippet} {body}"
 
     # Increase priority for questions
     if "?" in text :
