@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Todo Now | MailFocus</title>
+</head>
+
+<body>
+    <nav>
+        <a href="{{ url_for('todo_now') }}">
+            Todo Now
+        </a>
+
+        <a href="{{ url_for('all_threads') }}">
+            All Threads
+        </a>
+    </nav>
+
+    <h1>Todo Now</h1>
+
+    <p>
+        Your highest-priority conversations that likely need a reply.
+    </p>
+
+    {% if gmail_connected %}
+        <form
+            action="{{ url_for('sync_gmail') }}"
+            method="POST"
+        >
+            <button type="submit">Sync Gmail</button>
+        </form>
+    {% else %}
+        <form
+            action="{{ url_for('connect_gmail') }}"
+            method="GET"
+        >
+            <button type="submit">Connect Gmail</button>
+        </form>
+    {% endif %}
+
+    {% if emails %}
+        {% for email in emails %}
+            {% include "partials/thread_card.html" %}
+        {% endfor %}
+    {% else %}
+        <p>
+            Nothing currently needs an immediate reply.
+        </p>
+
+        <p>
+            <a href="{{ url_for('all_threads') }}">
+                View all threads
+            </a>
+        </p>
+    {% endif %}
+</body>
+</html>

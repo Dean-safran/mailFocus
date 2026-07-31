@@ -116,7 +116,7 @@ like our fake emails, we need to transform them
 - Prevent duplicate imports. ✅
 
 
-## Phase 7 : Analyze conversations instead of isolated messages
+## Phase 7 : Analyze conversations instead of isolated messages ✅
 *Our unique, central feature*
 An email might appear to need a reply when we already replied,
 an email unit should be a **conversation**, not an isolated email,
@@ -133,25 +133,22 @@ our dashboard understands who currently owes next action
 - Display one dashboard item per thread instead of per message.
 
 ## Phase 8 : Create the real task dashboard
-Organize imported emails instead of 
-just being an inbox copy with metadata
+Organize imported emails better
 
-- Add filters for:
+- Build default `todo now` page that shows
+  small actionable task the user should do first
+- Move current full list of gmails to `all threads` page
+- Add status tabs and counts for:
     - Needs Reply
     - Review
     - Waiting
     - Done
     - Ignored
-- Add totals for each status.
-- Sort threads by priority.
-- Show the classification reason.
-- Show how long ago the email arrived.
-- Include Sync Gmail button.
-- Add search.
-- Add sender filters.
-- Add an email detail page.
-- Add an Open in Gmail button.
-- Let users manually change classifications.
+- Show relative time, such as "2 hours ago"
+- Add manual status correction
+- Add search
+- Add details page for each email if clicked on
+- Add sender filtering
 
 
 ## Phase 9 : Learn from user corrections

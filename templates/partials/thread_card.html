@@ -1,0 +1,64 @@
+<div>
+    <h2>{{ email.subject }}</h2>
+
+    <p>
+        <strong>From:</strong>
+        {{ email.sender }}
+    </p>
+
+    <p>
+        <strong>Snippet:</strong>
+        {{ email.snippet }}
+    </p>
+
+    <p>
+        <strong>Priority:</strong>
+        {{ email.priority }}
+    </p>
+
+    <p>
+        <strong>Status:</strong>
+        {{ email.status }}
+    </p>
+
+    <p>
+        <strong>Reason:</strong>
+        {{ email.reason }}
+    </p>
+
+    <p>
+        <a
+            href="{{ email.gmail_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            Open in Gmail
+        </a>
+    </p>
+
+    <form
+        action="{{ url_for('mark_done', email_id=email.id) }}"
+        method="POST"
+        style="display: inline;"
+    >
+        <button type="submit">Mark Done</button>
+    </form>
+
+    <form
+        action="{{ url_for('mark_waiting', email_id=email.id) }}"
+        method="POST"
+        style="display: inline;"
+    >
+        <button type="submit">Waiting</button>
+    </form>
+
+    <form
+        action="{{ url_for('mark_ignore', email_id=email.id) }}"
+        method="POST"
+        style="display: inline;"
+    >
+        <button type="submit">No Action</button>
+    </form>
+
+    <hr>
+</div>

@@ -236,17 +236,83 @@ with app.app_context() :
 
 # homepage route
 @app.route("/")
-def dashboard() :
-    emails = db.session.execute(
-        db.select(Email).order_by(Email.priority.desc())
+def todo_now():
+    todo_threads = db.session.execute(
+        db.select(Email)
+        .where(Email.status == "Needs Reply")
+        .order_by(
+            Email.priority.desc(),
+            Email.received_at.desc(),
+        )
+        .limit(5)
     ).scalars().all()
 
     gmail_connected = os.path.exists("token.json")
 
-    # pass emails to template
-    return render_template('dashboard.html', 
-                           emails=emails,
-                           gmail_connected=gmail_connected)
+    return render_template(
+        "todo_now.html",
+        emails=todo_threads,
+        gmail_connected=gmail_connected,
+    )
+
+
+@app.route("/threads")
+def all_threads():
+    selected_status = request.args.get(
+        "status",
+        "",
+    )
+
+    allowed_statuses = {
+        "Needs Reply",
+        "Review",
+        "Waiting",
+        "Done",
+        "No Action",
+    }
+
+    statement = db.select(Email).order_by(
+        Email.priority.desc(),
+        Email.received_at.desc(),
+    )
+
+    if selected_status in allowed_statuses:
+        statement = statement.where(
+            Email.status == selected_status
+        )
+    else:
+        selected_status = ""
+
+    emails = db.session.execute(
+        statement
+    ).scalars().all()
+
+    all_saved_threads = db.session.execute(
+        db.select(Email)
+    ).scalars().all()
+
+    status_counts = {
+        "All": len(all_saved_threads),
+        "Needs Reply": 0,
+        "Review": 0,
+        "Waiting": 0,
+        "Done": 0,
+        "No Action": 0,
+    }
+
+    for thread in all_saved_threads:
+        if thread.status in status_counts:
+            status_counts[thread.status] += 1
+
+    gmail_connected = os.path.exists("token.json")
+
+    return render_template(
+        "all_threads.html",
+        emails=emails,
+        selected_status=selected_status,
+        status_counts=status_counts,
+        gmail_connected=gmail_connected,
+    )
 
 
 # mark done route
@@ -259,7 +325,9 @@ def mark_done(email_id) :
     email.status = "Done"
     db.session.commit()
 
-    return redirect(url_for("dashboard"))
+    return redirect(
+        request.referrer or url_for("all_threads")
+    )
 
 
 # mark waiting route
@@ -270,7 +338,9 @@ def mark_waiting(email_id) :
     email.status = "Waiting"
     db.session.commit()
 
-    return redirect(url_for("dashboard"))
+    return redirect(
+        request.referrer or url_for("all_threads")
+    )
 
 
 # mark ignore route
@@ -281,7 +351,9 @@ def mark_ignore(email_id) :
     email.status = "No Action"
     db.session.commit()
 
-    return redirect(url_for("dashboard"))
+    return redirect(
+        request.referrer or url_for("all_threads")
+    )
 
 
 # CONNECTING GMAIL ROUTES 
@@ -354,7 +426,7 @@ def oauth_callback():
     with open("token.json", "w", encoding="utf-8") as token_file:
         token_file.write(credentials.to_json())
 
-    return redirect(url_for("dashboard"))
+    return redirect(url_for("todo_now"))
 
 
 @app.route("/sync-gmail", methods=["POST"])
@@ -491,96 +563,7 @@ def sync_gmail():
         f"{removed_count} threads removed."
     )
 
-    return redirect(url_for("dashboard"))
-
-
-@app.route("/test-thread")
-def test_thread():
-    if not os.path.exists("token.json"):
-        return redirect(url_for("connect_gmail"))
-
-    service = get_gmail_service()
-    user_email = get_current_user_email(service)
-
-    response = (
-        service.users()
-        .threads()
-        .list(
-            userId="me",
-            labelIds=["INBOX"],
-            maxResults=30,
-        )
-        .execute()
-    )
-
-    thread_references = response.get("threads", [])
-    selected_thread = None
-
-    for thread_reference in thread_references:
-        gmail_thread = (
-            service.users()
-            .threads()
-            .get(
-                userId="me",
-                id=thread_reference["id"],
-                format="full",
-            )
-            .execute()
-        )
-
-        messages = gmail_thread.get("messages", [])
-
-        if len(messages) >= 2:
-            selected_thread = gmail_thread
-            break
-
-    if selected_thread is None:
-        return (
-            "No recent inbox thread with multiple "
-            "messages was found."
-        )
-
-    normalized_thread = normalize_gmail_thread(
-        selected_thread
-    )
-
-    analysis = analyze_thread(
-        normalized_thread,
-        user_email,
-    )
-
-    messages = normalized_thread["messages"]
-    newest_message = analysis["newest_message"]
-
-    print("\n--- THREAD ACTION ANALYSIS ---")
-    print("Number of messages:", len(messages))
-
-    for index, message in enumerate(
-        messages,
-        start=1,
-    ):
-        print(f"\nMessage {index}")
-        print("Sender:", message["sender"])
-        print("Received at:", message["received_at"])
-        print("Body preview:", message["body"][:150])
-
-    print("\nNewest message:")
-    print("Sender:", newest_message["sender"])
-    print(
-        "Sent by current user:",
-        analysis["newest_sent_by_user"],
-    )
-
-    print("\nThread result:")
-    print("Status:", analysis["status"])
-    print("Priority:", analysis["priority"])
-    print("Reason:", analysis["reasons"])
-    print("--------------------------------\n")
-
-    return (
-        f"Thread analyzed as {analysis['status']}. "
-        f"Check the Flask terminal."
-    )
+    return redirect(url_for("todo_now"))
 
 # =======================================================
 
