@@ -263,6 +263,11 @@ def all_threads():
         "",
     )
 
+    search_query = request.args.get(
+        "q",
+        "",
+    ).strip()
+
     allowed_statuses = {
         "Needs Reply",
         "Review",
@@ -282,6 +287,21 @@ def all_threads():
         )
     else:
         selected_status = ""
+
+    # %example% means chars can come 
+    # before or after 'example'
+    if search_query:
+        search_pattern = f"%{search_query}%"
+
+        # return rows where search_pattern
+        # is in field, case insensitive
+        statement = statement.where(
+            db.or_(
+                Email.sender.ilike(search_pattern),
+                Email.subject.ilike(search_pattern),
+                Email.snippet.ilike(search_pattern),
+            )
+        )
 
     emails = db.session.execute(
         statement
@@ -310,45 +330,30 @@ def all_threads():
         "all_threads.html",
         emails=emails,
         selected_status=selected_status,
+        search_query=search_query,
         status_counts=status_counts,
         gmail_connected=gmail_connected,
     )
 
 
-# mark done route
-@app.route("/emails/<int:email_id>/done", methods=["POST"])
-def mark_done(email_id) :
-    # if the email exists return Email object,
-    # else return 404 Not Found page
+@app.route("/emails/<int:email_id>/status", methods=["POST"])
+def update_status(email_id):
     email = db.get_or_404(Email, email_id)
 
-    email.status = "Done"
-    db.session.commit()
+    new_status = request.form.get("status", "")
 
-    return redirect(
-        request.referrer or url_for("all_threads")
-    )
+    allowed_statuses = {
+        "Needs Reply",
+        "Review",
+        "Waiting",
+        "Done",
+        "No Action",
+    }
 
+    if new_status not in allowed_statuses:
+        return "Invalid status.", 400
 
-# mark waiting route
-@app.route("/emails/<int:email_id>/waiting", methods=["POST"])
-def mark_waiting(email_id) :
-    email = db.get_or_404(Email, email_id)
-
-    email.status = "Waiting"
-    db.session.commit()
-
-    return redirect(
-        request.referrer or url_for("all_threads")
-    )
-
-
-# mark ignore route
-@app.route("/emails/<int:email_id>/ignore", methods=["POST"])
-def mark_ignore(email_id) :
-    email = db.get_or_404(Email, email_id)
-
-    email.status = "No Action"
+    email.status = new_status
     db.session.commit()
 
     return redirect(

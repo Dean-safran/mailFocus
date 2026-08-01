@@ -37,27 +37,56 @@
     </p>
 
     <form
-        action="{{ url_for('mark_done', email_id=email.id) }}"
-        method="POST"
-        style="display: inline;"
+    action="{{ url_for('update_status', email_id=email.id) }}"
+    method="POST"
     >
-        <button type="submit">Mark Done</button>
-    </form>
+        <label for="status-{{ email.id }}">
+            Change status:
+        </label>
 
-    <form
-        action="{{ url_for('mark_waiting', email_id=email.id) }}"
-        method="POST"
-        style="display: inline;"
-    >
-        <button type="submit">Waiting</button>
-    </form>
+        <select
+            id="status-{{ email.id }}"
+            name="status"
+        >
+            <option
+                value="Needs Reply"
+                {% if email.status == "Needs Reply" %}selected{% endif %}
+            >
+                Needs Reply
+            </option>
 
-    <form
-        action="{{ url_for('mark_ignore', email_id=email.id) }}"
-        method="POST"
-        style="display: inline;"
-    >
-        <button type="submit">No Action</button>
+            <option
+                value="Review"
+                {% if email.status == "Review" %}selected{% endif %}
+            >
+                Review
+            </option>
+
+            <option
+                value="Waiting"
+                {% if email.status == "Waiting" %}selected{% endif %}
+            >
+                Waiting
+            </option>
+
+            <option
+                value="Done"
+                {% if email.status == "Done" %}selected{% endif %}
+            >
+                Done
+            </option>
+
+            <option
+                value="No Action"
+                {% if email.status == "No Action" %}selected{% endif %}
+            >
+                No Action
+            </option>
+        </select>
+
+        <button type="submit">
+            Update
+        </button>
     </form>
 
     <hr>

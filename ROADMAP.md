@@ -136,20 +136,29 @@ our dashboard understands who currently owes next action
 Organize imported emails better
 
 - Build default `todo now` page that shows
-  small actionable task the user should do first
-- Move current full list of gmails to `all threads` page
-- Add status tabs and counts for:
+  small actionable task the user should do first  ✅
+- Move current full list of gmails to `all threads` page  ✅
+- Add status tabs and counts for:  ✅
     - Needs Reply
     - Review
     - Waiting
     - Done
     - Ignored
-- Show relative time, such as "2 hours ago"
 - Add manual status correction
 - Add search
 - Add details page for each email if clicked on
+    - show both relative time and time in user's timezone
 - Add sender filtering
 
+
+To possibly edit for next two phases
+- to gauge what is important to user, 
+  ask what they do not want to see in an email
+  (e.g no newsletters, promotional stuff, etc
+   but yes to Columbia related emails because they 
+   go to school there)
+- improve the email classifier using an opensource AI API,
+  maybe create our own, NLP too advanced for me?
 
 ## Phase 9 : Learn from user corrections
 If the user changes an email from `needs reply` to

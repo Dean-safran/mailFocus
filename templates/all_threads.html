@@ -11,18 +11,26 @@
     <title>All Threads | MailFocus</title>
 </head>
 
+
+
 <body>
+
+
     <nav>
         <a href="{{ url_for('todo_now') }}">
             Todo Now
         </a>
 
         <a href="{{ url_for('all_threads') }}">
-            All Threads
+            Clear All Filters
         </a>
     </nav>
 
+
+
     <h1>All Threads</h1>
+
+
 
     {% if gmail_connected %}
         <form
@@ -40,15 +48,60 @@
         </form>
     {% endif %}
 
+
+
+    <form
+        action="{{ url_for('all_threads') }}"
+        method="GET"
+    >
+        {% if selected_status %}
+            <input
+                type="hidden"
+                name="status"
+                value="{{ selected_status }}"
+            >
+        {% endif %}
+
+        <label for="thread-search">
+            Search Gmails:
+        </label>
+
+        <input
+            id="thread-search"
+            type="search"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Sender, subject, or snippet"
+        >
+
+        <button type="submit">
+            Search
+        </button>
+
+        {% if search_query %}
+            <a
+                href="{{ url_for(
+                    'all_threads',
+                    status=selected_status or None
+                ) }}"
+            >
+                Clear search
+            </a>
+        {% endif %}
+    </form>
+
+
+
     <nav aria-label="Thread status filters">
-        <a href="{{ url_for('all_threads') }}">
+        <a href="{{ url_for('all_threads', q=search_query or None) }}">
             All ({{ status_counts["All"] }})
         </a>
 
         <a
             href="{{ url_for(
                 'all_threads',
-                status='Needs Reply'
+                status='Needs Reply',
+                q=search_query or None
             ) }}"
         >
             Needs Reply
@@ -58,7 +111,8 @@
         <a
             href="{{ url_for(
                 'all_threads',
-                status='Review'
+                status='Review',
+                q=search_query or None
             ) }}"
         >
             Review
@@ -68,7 +122,8 @@
         <a
             href="{{ url_for(
                 'all_threads',
-                status='Waiting'
+                status='Waiting',
+                q=search_query or None
             ) }}"
         >
             Waiting
@@ -78,7 +133,8 @@
         <a
             href="{{ url_for(
                 'all_threads',
-                status='Done'
+                status='Done',
+                q=search_query or None
             ) }}"
         >
             Done
@@ -88,13 +144,16 @@
         <a
             href="{{ url_for(
                 'all_threads',
-                status='No Action'
+                status='No Action',
+                q=search_query or None
             ) }}"
         >
             No Action
             ({{ status_counts["No Action"] }})
         </a>
     </nav>
+
+
 
     {% if selected_status %}
         <h2>{{ selected_status }}</h2>
@@ -108,6 +167,8 @@
         <h2>Every status</h2>
     {% endif %}
 
+
+
     {% if emails %}
         {% for email in emails %}
             {% include "partials/thread_card.html" %}
@@ -117,5 +178,7 @@
             No threads were found for this status.
         </p>
     {% endif %}
+
+
 </body>
 </html>
