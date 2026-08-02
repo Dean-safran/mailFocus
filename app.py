@@ -7,8 +7,10 @@ from flask import (
     session
 )
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from services.classifier import classify_email
+from services.time_formatting import *
 
 # imports for connecting gmail ->
 from google_auth_oauthlib.flow import Flow
@@ -351,11 +353,17 @@ def update_status(email_id):
     }
 
     if new_status not in allowed_statuses:
-        return "Invalid status.", 400
+        return {"error": "Invalid status."}, 400
 
     email.status = new_status
     db.session.commit()
 
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return {
+            "success": True,
+            "status": email.status,
+        }
+    
     return redirect(
         request.referrer or url_for("all_threads")
     )
@@ -570,6 +578,22 @@ def sync_gmail():
 
     return redirect(url_for("todo_now"))
 
+
+# Modal detail route
+@app.route("/threads/<int:thread_id>/details")
+def thread_details(thread_id):
+    thread = db.get_or_404(Email, thread_id)
+
+    return render_template(
+        "partials/thread_detail.html",
+        email=thread,
+        relative_time=format_relative_time(
+            thread.received_at
+        ),
+        local_time=format_local_time(
+            thread.received_at
+        ),
+    )
 # =======================================================
 
 if __name__ == "__main__" :

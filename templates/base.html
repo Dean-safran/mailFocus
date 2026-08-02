@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {% block title %}
+            MailFocus
+        {% endblock %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/thread_modal.css'
+        ) }}"
+    >
+
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    <nav>
+        <a href="{{ url_for('todo_now') }}">
+            Todo Now
+        </a>
+
+        <a href="{{ url_for('all_threads') }}">
+            All Threads
+        </a>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include "partials/thread_modal.html" %}
+
+    <script
+        src="{{ url_for(
+            'static',
+            filename='js/thread_modal.js'
+        ) }}"
+        defer
+    ></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

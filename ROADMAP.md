@@ -144,56 +144,70 @@ Organize imported emails better
     - Waiting
     - Done
     - Ignored
-- Add manual status correction
-- Add search
-- Add details page for each email if clicked on
+- Add manual status correction ✅
+- Add search ✅
+- Add modular details page for each email if clicked on
+    - add javascript to create route link and create route function
     - show both relative time and time in user's timezone
-- Add sender filtering
 
+## Phase 9 : Add Thread Details Modal ✅
 
-To possibly edit for next two phases
-- to gauge what is important to user, 
-  ask what they do not want to see in an email
-  (e.g no newsletters, promotional stuff, etc
-   but yes to Columbia related emails because they 
-   go to school there)
-- improve the email classifier using an opensource AI API,
-  maybe create our own, NLP too advanced for me?
+- make each thread card clickable
+- Open a reusable modal without leaving the current page
+- load the selected thread using its database ID
+- show :
+    - sender + recipients
+    - subject
+    - full newest message body
+    - relative time
+    - exact local time 
+    - status
+    - priority
+    - classification reason
+    - open in gmail link
+- allow status changes inside modal 
+- add close-button, background-click, and escape key behavior
+- make modal work from all pages (todoNow, all_pages, filters and search)
 
-## Phase 9 : Learn from user corrections
-If the user changes an email from `needs reply` to
-`ignore`, our app should remember that correction
-
-- Store whether a classification was automatic or manual.
-- Save every manual correction.
-- Track senders frequently marked important.
-- Track senders frequently ignored.
-- Increase scores for important senders.
-- Decrease scores for ignored senders.
-- Create a sender-preferences database table.
-- Apply sender preferences during classification.
-
-## Phase 10  : Add AI analysis
-Improve uncertain classifications
-
-- Use AI only when rule-based confidence is low.
-- Remove quoted reply history before sending email text.
-- Send only the minimum necessary email content.
-- Request structured JSON.
-- Extract:
-    - Whether a reply is needed
+## Phase 10 : Install and Integrate Small Ollama Model
+- Install Ollama locally for development.
+- Choose a small instruction model suitable for email classification.
+- Test the model manually with sample emails.
+- Create an Ollama service module in Flask.
+- Send classification requests through Ollama’s local API.
+- Request structured JSON containing:
+    - Status
+    - Priority
+    - Reason
+    - **Change original rule classifier before adding these** --> 
     - Requested action
     - Deadline
-    - Priority
-    - Status
-    - Short explanation
-- Validate the AI response before saving it.
-- Fall back to rules when the AI call fails.
-- Label AI-generated results clearly.
-- Avoid sending unnecessary sensitive information.
+    - Confidence
+- Validate every response before saving it.
+- Fall back to the current rule classifier when Ollama fails.
+- Keep deterministic thread logic, such as marking threads Waiting when the user sent the newest message.
+- Classify only new or changed threads to avoid unnecessary model calls.
 
+## Phase 11 : Improve classification quality 
+- Build a small set of manually labeled test emails.
+- Compare Ollama’s classifications against the expected results.
+- Improve the prompt and examples.
+- Test several small Ollama models.
+- Select the smallest model that performs reliably.
+- Remove quoted reply history and signatures before classification.
+- Send only the newest message and limited thread context.
+- Add onboarding questions about:
+    - Important organizations or domains
+    - Newsletters and promotions
+    - Receipts and automated notifications
+- Store user preferences locally.
+- Apply preferences during classification.
+- Save every manual status correction.
+- Track frequently important or ignored senders and domains.
+- Use corrections to adjust future classifications.
+- Preserve manual choices until a new message arrives.
 
-## Phase 11 : Improve visual design
+## Phase 12 : Improve visual design
 Use bootstrap and more CSS to make things pretty
 
 - Add a CSS file or Bootstrap.
@@ -207,22 +221,43 @@ Use bootstrap and more CSS to make things pretty
 - Add clear error messages.
 - Improve spacing, fonts, and readability.
 
-## Phase 12 :  Make project portfolio ready
-Someone reviewing our GitHub can understand, 
-install, and run the project
+# Phase 13 : Package MailFocus Locally
 
-- Organize files into clear folders.
-- Remove all secrets and real email data.
-- Add error handling.
-- Add classifier tests.
-- Add database tests where useful.
-- Create a complete README.md.
-- Include installation instructions.
-- Include Google API setup instructions.
-- Add screenshots.
+- Run Flask and Ollama together locally.
+- Add Docker Compose for development and testing.
+- Store model files in a persistent local volume.
+- Download the selected model during first-time setup.
+- Store Gmail tokens, settings, and email data locally.
+- Create a launcher that starts MailFocus and opens the browser.
+- Reduce or hide technical setup steps.
+- Test installation on clean computers.
+- Add uninstall and update instructions.
+
+# Phase 14 : Create Public Website
+
+- Explain what MailFocus does.
+- Emphasize that Gmail data and AI processing remain local.
+- List supported operating systems and hardware requirements.
+- Provide the MailFocus download.
+- Add installation instructions.
+- Add screenshots and a demo video.
+- Publish privacy and security information.
+- Provide version history and update downloads.
+
+# Phase 15 : Make Project Portfolio Ready 
+
+- Organize the Flask app into clear modules.
+- Remove secrets and real email data.
+- Add logging and error handling.
+- Add tests for:
+    - Gmail parsing
+    - Thread analysis
+    - Ollama response validation
+    - Classification fallback
+    - User preferences
 - Add a fake-data demo mode.
-- Deploy the Flask app.
-- Record a short demo video.
-- Explain privacy limitations.
-- Confirm credentials are not in GitHub.
-- Confirm the app works from a fresh installation.
+- Write a complete README.
+- Document Google OAuth and Ollama setup.
+- Confirm a fresh installation works.
+- Record a project demonstration.
+- Explain limitations and future plans.

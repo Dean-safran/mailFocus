@@ -1,0 +1,31 @@
+<div
+    id="thread-modal"
+    class="thread-modal"
+    aria-hidden="true"
+>
+    <div
+        class="thread-modal__backdrop"
+        data-modal-close
+    ></div>
+
+    <section
+        class="thread-modal__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="thread-modal-title"
+        tabindex="-1"
+    >
+        <button
+            type="button"
+            class="thread-modal__close"
+            aria-label="Close thread details"
+            data-modal-close
+        >
+            &times;
+        </button>
+
+        <div id="thread-modal-content">
+            <p>Loading thread details...</p>
+        </div>
+    </section>
+</div>

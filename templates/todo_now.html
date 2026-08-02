@@ -1,31 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
+{% extends "base.html" %}
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+{% block title %}
+    Todo Now | MailFocus
+{% endblock %}
 
-    <title>Todo Now | MailFocus</title>
-</head>
-
-<body>
-    <nav>
-        <a href="{{ url_for('todo_now') }}">
-            Todo Now
-        </a>
-
-        <a href="{{ url_for('all_threads') }}">
-            All Threads
-        </a>
-    </nav>
-
+{% block content %}
     <h1>Todo Now</h1>
 
     <p>
-        Your highest-priority conversations that likely need a reply.
+        Your highest-priority conversations that need attention.
     </p>
 
     {% if gmail_connected %}
@@ -52,12 +35,5 @@
         <p>
             Nothing currently needs an immediate reply.
         </p>
-
-        <p>
-            <a href="{{ url_for('all_threads') }}">
-                View all threads
-            </a>
-        </p>
     {% endif %}
-</body>
-</html>
+{% endblock %}

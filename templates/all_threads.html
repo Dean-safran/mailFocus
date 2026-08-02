@@ -1,36 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
+{% extends "base.html" %}
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+{% block title %}
+    All Threads | MailFocus
+{% endblock %}
 
-    <title>All Threads | MailFocus</title>
-</head>
-
-
-
-<body>
-
-
-    <nav>
-        <a href="{{ url_for('todo_now') }}">
-            Todo Now
-        </a>
-
-        <a href="{{ url_for('all_threads') }}">
-            Clear All Filters
-        </a>
-    </nav>
-
-
-
+{% block content %}
     <h1>All Threads</h1>
-
-
 
     {% if gmail_connected %}
         <form
@@ -167,18 +142,12 @@
         <h2>Every status</h2>
     {% endif %}
 
-
-
     {% if emails %}
         {% for email in emails %}
             {% include "partials/thread_card.html" %}
         {% endfor %}
     {% else %}
-        <p>
-            No threads were found for this status.
-        </p>
+        <p>No threads matched the current filters.</p>
     {% endif %}
 
-
-</body>
-</html>
+{% endblock %}

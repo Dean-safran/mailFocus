@@ -1,32 +1,91 @@
-<div>
-    <h2>{{ email.subject }}</h2>
+<article
+    class="thread-card"
+    data-thread-card
+    data-thread-id="{{ email.id }}"
+    tabindex="0"
+    role="button"
+    aria-label="View details for {{ email.subject }}"
+>
+    <div class="thread-card__content">
+        <p>{{ email.sender }}</p>
 
-    <p>
-        <strong>From:</strong>
-        {{ email.sender }}
-    </p>
+        <h2>
+            {{ email.subject or "(No subject)" }}
+        </h2>
 
-    <p>
-        <strong>Snippet:</strong>
-        {{ email.snippet }}
-    </p>
+        <p>{{ email.snippet }}</p>
 
-    <p>
-        <strong>Priority:</strong>
-        {{ email.priority }}
-    </p>
+        <p>
+            Status:
+            <span data-thread-status>
+                {{ email.status }}
+            </span>
+        </p>
 
-    <p>
-        <strong>Status:</strong>
-        {{ email.status }}
-    </p>
+        <p>Priority: {{ email.priority }}</p>
+    </div>
 
-    <p>
-        <strong>Reason:</strong>
-        {{ email.reason }}
-    </p>
+    <div class="thread-card__actions">
+        <button
+            type="button"
+            data-open-thread
+        >
+            View details
+        </button>
 
-    <p>
+        <form
+        action="{{ url_for('update_status', email_id=email.id) }}"
+        method="POST"
+        >
+            <label for="status-{{ email.id }}">
+                Change status:
+            </label>
+    
+            <select
+                id="status-{{ email.id }}"
+                name="status"
+            >
+                <option
+                    value="Needs Reply"
+                    {% if email.status == "Needs Reply" %}selected{% endif %}
+                >
+                    Needs Reply
+                </option>
+    
+                <option
+                    value="Review"
+                    {% if email.status == "Review" %}selected{% endif %}
+                >
+                    Review
+                </option>
+    
+                <option
+                    value="Waiting"
+                    {% if email.status == "Waiting" %}selected{% endif %}
+                >
+                    Waiting
+                </option>
+    
+                <option
+                    value="Done"
+                    {% if email.status == "Done" %}selected{% endif %}
+                >
+                    Done
+                </option>
+    
+                <option
+                    value="No Action"
+                    {% if email.status == "No Action" %}selected{% endif %}
+                >
+                    No Action
+                </option>
+            </select>
+    
+            <button type="submit">
+                Update
+            </button>
+        </form>
+
         <a
             href="{{ email.gmail_url }}"
             target="_blank"
@@ -34,60 +93,6 @@
         >
             Open in Gmail
         </a>
-    </p>
-
-    <form
-    action="{{ url_for('update_status', email_id=email.id) }}"
-    method="POST"
-    >
-        <label for="status-{{ email.id }}">
-            Change status:
-        </label>
-
-        <select
-            id="status-{{ email.id }}"
-            name="status"
-        >
-            <option
-                value="Needs Reply"
-                {% if email.status == "Needs Reply" %}selected{% endif %}
-            >
-                Needs Reply
-            </option>
-
-            <option
-                value="Review"
-                {% if email.status == "Review" %}selected{% endif %}
-            >
-                Review
-            </option>
-
-            <option
-                value="Waiting"
-                {% if email.status == "Waiting" %}selected{% endif %}
-            >
-                Waiting
-            </option>
-
-            <option
-                value="Done"
-                {% if email.status == "Done" %}selected{% endif %}
-            >
-                Done
-            </option>
-
-            <option
-                value="No Action"
-                {% if email.status == "No Action" %}selected{% endif %}
-            >
-                No Action
-            </option>
-        </select>
-
-        <button type="submit">
-            Update
-        </button>
-    </form>
-
-    <hr>
-</div>
+    </div>
+</article>
+<hr>

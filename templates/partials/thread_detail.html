@@ -1,0 +1,102 @@
+<article class="thread-detail">
+    <header class="thread-detail__header">
+        <p class="thread-detail__sender">
+            {{ email.sender }}
+        </p>
+
+        <h2 id="thread-modal-title">
+            {{ email.subject or "(No subject)" }}
+        </h2>
+
+        <div class="thread-detail__time">
+            <p>{{ relative_time }}</p>
+            <p>{{ local_time }}</p>
+        </div>
+    </header>
+
+    <dl class="thread-detail__metadata">
+        <div>
+            <dt>From</dt>
+            <dd>{{ email.sender or "Unknown sender" }}</dd>
+        </div>
+
+        <div>
+            <dt>To</dt>
+            <dd>{{ email.recipients or "Unknown recipient" }}</dd>
+        </div>
+
+        <div>
+            <dt>Status</dt>
+            <dd>{{ email.status }}</dd>
+        </div>
+
+        <div>
+            <dt>Priority</dt>
+            <dd>{{ email.priority }}</dd>
+        </div>
+
+        <div>
+            <dt>Classification reason</dt>
+            <dd>
+                {{ email.reason or "No reason available." }}
+            </dd>
+        </div>
+    </dl>
+
+    <section class="thread-detail__body">
+        <h3>Newest message</h3>
+
+        <div class="thread-detail__message">
+            {{ email.body or email.snippet or "No message body available." }}
+        </div>
+    </section>
+
+    <section class="thread-detail__actions">
+        <form
+            action="{{ url_for(
+                'update_status',
+                email_id=email.id
+            ) }}"
+            method="POST"
+            data-modal-status-form
+        >
+            <label for="modal-status-{{ email.id }}">
+                Change status
+            </label>
+
+            <select
+                id="modal-status-{{ email.id }}"
+                name="status"
+            >
+                {% for status in [
+                    "Needs Reply",
+                    "Review",
+                    "Waiting",
+                    "Done",
+                    "No Action"
+                ] %}
+                    <option
+                        value="{{ status }}"
+                        {% if email.status == status %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ status }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">
+                Update status
+            </button>
+        </form>
+
+        <a
+            href="{{ email.gmail_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            Open in Gmail
+        </a>
+    </section>
+</article>
